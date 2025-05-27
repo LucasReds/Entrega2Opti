@@ -1,24 +1,24 @@
 import csv
 import random
 
-P = 30
-T = 365
-C = 20
+P = 8
+T = 14
+C = 5
 
 # Crear procesos.csv, periodos.csv, contaminantes.csv
-with open("procesos.csv", "w", newline="") as f:
+with open("Datos/procesos.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["p"])
     for p in range(1, P + 1):
         writer.writerow([p])
 
-with open("periodos.csv", "w", newline="") as f:
+with open("Datos/periodos.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["t"])
     for t in range(1, T + 1):
         writer.writerow([t])
 
-with open("contaminantes.csv", "w", newline="") as f:
+with open("Datos/contaminantes.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["c"])
     for c in range(1, C + 1):
@@ -38,14 +38,14 @@ v = {p: random.randint(30, 100) for p in range(1, P + 1)}
 f_param = {p: random.randint(1, 5) for p in range(1, P + 1)}
 r = {p: random.randint(5, 15) for p in range(1, P + 1)}
 
-guardar_parametro_por_proceso("i.csv", i)
-guardar_parametro_por_proceso("d.csv", d)
-guardar_parametro_por_proceso("v.csv", v)
-guardar_parametro_por_proceso("f.csv", f_param)
-guardar_parametro_por_proceso("r.csv", r)
+guardar_parametro_por_proceso("Datos/i.csv", i)
+guardar_parametro_por_proceso("Datos/d.csv", d)
+guardar_parametro_por_proceso("Datos/v.csv", v)
+guardar_parametro_por_proceso("Datos/f.csv", f_param)
+guardar_parametro_por_proceso("Datos/r.csv", r)
 
 # Eficiencia de filtrado eta[c, p]
-with open("eta.csv", "w", newline="") as f:
+with open("Datos/eta.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["c", "p", "eta"])
     for c in range(1, C + 1):
@@ -54,7 +54,7 @@ with open("eta.csv", "w", newline="") as f:
             writer.writerow([c, p, eta_val])
 
 # Lluvia por periodo (alpha)
-with open("alpha.csv", "w", newline="") as f:
+with open("Datos/alpha.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["t", "alpha"])
     for t in range(1, T + 1):
@@ -62,11 +62,11 @@ with open("alpha.csv", "w", newline="") as f:
         writer.writerow([t, lluvia])
 
 # Parámetros escalares
-with open("parametros.csv", "w", newline="") as f:
+with open("Datos/parametros.csv", "w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["nombre", "valor"])
-    writer.writerow(["B", 50000])   # presupuesto
+    writer.writerow(["B", 5000])   # presupuesto
     writer.writerow(["E", 200])     # volumen emergencia
-    writer.writerow(["N", 20])      # lluvia normal
-    writer.writerow(["g", 3])       # litros de rebalse proceso
+    writer.writerow(["N", 30])      # lluvia normal
+    writer.writerow(["g", 10])       # litros de rebalse proceso
     writer.writerow(["mu", 5])      # rebalse piscina

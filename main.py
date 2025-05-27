@@ -9,6 +9,7 @@ f_df = pd.read_csv("Datos/f.csv")
 r_df = pd.read_csv("Datos/r.csv")
 eta_df = pd.read_csv("Datos/eta.csv")
 alpha_df = pd.read_csv("Datos/alpha.csv")
+parametros_df = pd.read_csv("Datos/parametros.csv")
 
 # Rango de parámetros
 P = sorted(i_df['p'].unique())
@@ -20,11 +21,11 @@ T_ = len(T)
 C_ = len(C)
 
 # Parámetros numéricos
-presupuesto = 5000
-volumen_emergencia = 100
-N = 15
-g = 2
-mu = 4
+presupuesto = parametros_df[parametros_df['nombre'] == 'B']['valor'].values[0]
+volumen_emergencia = parametros_df[parametros_df['nombre'] == 'E']['valor'].values[0]
+N = parametros_df[parametros_df['nombre'] == 'N']['valor'].values[0]
+g = parametros_df[parametros_df['nombre'] == 'g']['valor'].values[0]
+mu = parametros_df[parametros_df['nombre'] == 'mu']['valor'].values[0]
 M = 1e8
 eps = 1e-3
 
@@ -117,6 +118,9 @@ for p in P:
         m.addConstr(X[p, t] <= Y[p, t], name=f"R13_{p}_{t}")
 
 # Optimize
+
+#m.computeIIS()
+#m.write("modelo.ilp")  # Guardar el IIS para depuración
 
 m.optimize()
 
