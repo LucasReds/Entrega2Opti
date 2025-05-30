@@ -233,6 +233,17 @@ if m.status == GRB.OPTIMAL:
     rebalse_proceso = []
     rebalse_piscina = []
 
+    info_modelo = {
+        "Valor objetivo": [m.ObjVal],
+        "GAP": [m.MIPGap],
+        "Tiempo de resolución (segundos)": [m.Runtime],
+        "Cantidad de variables": [m.NumVars],
+        "Cantidad de restricciones": [m.NumConstrs],
+        "Cantidad de variables binarias": [sum(1 for v in m.getVars() if v.VType == GRB.BINARY)],
+        "Cantidad de variables continuas": [sum(1 for v in m.getVars() if v.VType == GRB.CONTINUOUS)],
+    }
+    df_info_modelo = pd.DataFrame(info_modelo)
+
     for p in P:
         for t in T:
             if X[p, t].X > 0.5:
@@ -263,6 +274,7 @@ if m.status == GRB.OPTIMAL:
 
     # Write to Excel
     with pd.ExcelWriter("Resultados_Optimización.xlsx") as writer:
+        df_info_modelo.to_excel(writer, sheet_name="Información Modelo", index=False)
         pd.DataFrame(activated).to_excel(writer, sheet_name="Procesos Activados", index=False)
         pd.DataFrame(in_operation).to_excel(writer, sheet_name="Procesos en Operación", index=False)
         pd.DataFrame(rebalse_proceso + rebalse_piscina).to_excel(writer, sheet_name="Rebalses", index=False)
