@@ -2,74 +2,88 @@ import pandas as pd
 from gurobipy import Model, GRB, quicksum
 
 # 1. Costo instalación de procesos
-i_df = pd.read_excel("Listos/costo_instalacion_proceso.xlsx", header=None, names=["valor"])
+i_df = pd.read_excel("Datos/costo_instalacion_proceso.xlsx", header=None, names=["valor"])
 i_df["p"] = i_df.index
 i_df = i_df[["p", "valor"]]
 i = dict(zip(i_df["p"], i_df["valor"]))
 
 # 2. Costo mantención de procesos
-d_df = pd.read_excel("Listos/costo_mantencion_proceso.xlsx", header=None, names=["valor"])
+d_df = pd.read_excel("Datos/costo_mantencion_proceso.xlsx", header=None, names=["valor"])
 d_df["p"] = d_df.index
 d_df = d_df[["p", "valor"]]
 d = dict(zip(d_df["p"], d_df["valor"]))
 
 # 3. Eficiencia de procesos (matriz: contaminante x proceso)
-eta_df = pd.read_excel("Listos/Eficiencias.xlsx", header=None)
+eta_df = pd.read_excel("Datos/Eficiencias.xlsx", header=None)
 eta_df["c"] = eta_df.index
 eta_df = eta_df.melt(id_vars="c", var_name="p", value_name="eta")
 eta = {(int(row["c"]), int(row["p"])): row["eta"] for _, row in eta_df.iterrows()}
 
 # 4. Volumen a piscina (f)
-f_df = pd.read_excel("Listos/tiempo_duracion_proceso.xlsx", header=None, names=["valor"])
+f_df = pd.read_excel("Datos/tiempo_duracion_proceso.xlsx", header=None, names=["valor"])
 f_df["p"] = f_df.index
 f_df = f_df[["p", "valor"]]
 f = dict(zip(f_df["p"], f_df["valor"]))
 
-# 7. Volumen de rebalse (g)
-g = pd.read_excel("Listos/g_vol_proceso_piscina.xlsx", header=None).iloc[0, 0]
+# 5. Volumen de rebalse (g)
+g = pd.read_excel("Datos/g_vol_proceso_piscina.xlsx", header=None).iloc[0, 0]
 
-
-# 5. Lluvia por periodo (alpha)
-alpha_df = pd.read_excel("Listos/litros_agua_llueve.xlsx", header=None, names=["alpha"])
+# 6. Lluvia por periodo (alpha)
+alpha_df = pd.read_excel("Datos/litros_agua_llueve.xlsx", header=None, names=["alpha"])
 alpha_df["t"] = alpha_df.index
 alpha_df = alpha_df[["t", "alpha"]]
 alpha = dict(zip(alpha_df["t"], alpha_df["alpha"]))
 
-# 6. Rebalse (r)
-r = pd.read_excel("Listos/rp_vol_salida_proceso.xlsx", header=None).iloc[0, 0]
+# 7. Rebalse (r)
+r = pd.read_excel("Datos/rp_vol_salida_proceso.xlsx", header=None).iloc[0, 0]
 
 # 8. Volumen máximo proceso (v)
-v = pd.read_excel("Listos/volumen_maximo_proceso_p.xlsx", header=None).iloc[0, 0]
+v = pd.read_excel("Datos/volumen_maximo_proceso_p.xlsx", header=None).iloc[0, 0]
+
+# 9 . Concentración de contaminantes en el agua
+concentration_df = pd.read_excel("Datos/concentraciones_contaminantes.xlsx", header=None, names=["concentration"])
+concentration_df["c"] = concentration_df.index
+concentration_df = concentration_df[["c", "concentration"]]
+concentration = dict(zip(concentration_df["c"], concentration_df["concentration"]))
+
+print("Datos concentraciones:", concentration)
 
 # 9. Parámetros individuales
 
 # presupuesto
-presupuesto_df = pd.read_excel("Listos/Presupuesto_industria.xlsx", header=None)
+presupuesto_df = pd.read_excel("Datos/Presupuesto_industria.xlsx", header=None)
 presupuesto = presupuesto_df.iloc[0, 0]
 
 # N volumen industria proceso
-N_df = pd.read_excel("Listos/N_volumen_industria_proceso.xlsx", header=None)
+N_df = pd.read_excel("Datos/N_volumen_industria_proceso.xlsx", header=None)
 N = N_df.iloc[0, 0]
 
 # mu volumen piscina proceso
-mu_df = pd.read_excel("Listos/mu_vol_piscina_proceso.xlsx", header=None)
+mu_df = pd.read_excel("Datos/mu_vol_piscina_proceso.xlsx", header=None)
 mu = mu_df.iloc[0, 0]
 
 # volumen de emergencia
-vol_em_df = pd.read_excel("Listos/Volumen_piscina_emergencia.xlsx", header=None)
+vol_em_df = pd.read_excel("Datos/Volumen_piscina_emergencia.xlsx", header=None)
 volumen_emergencia = vol_em_df.iloc[0, 0]
+
+# area de piscina
+area_df = pd.read_excel("Datos/area_proceso.xlsx", header=None)
+a = area_df.iloc[0, 0]
 
 # Constantes
 eps = 1e-4
-M = 1e10  # rescaled "big M"
+M = 1e10  
 
-v = 125000000
-volumen_emergencia = 450000000
-r = N *0.95
+#presupuesto *= 100
 
-a = 30000
-
-presupuesto *= 100
+# para cada proceso, bajar el costo de instalación y mantención
+i_df["valor"] *= 0.01
+i = dict(zip(i_df["p"], i_df["valor"]))
+print("Costo instalación de procesos:", i)
+d_df["valor"] *= 0.01
+d = dict(zip(d_df["p"], d_df["valor"]))
+print("Costo mantención de procesos:", d)
+print("presupuesto:", presupuesto)
 
 # Rangos
 P = sorted(i_df["p"].unique())
@@ -95,14 +109,6 @@ C_ = len(C)
 # print("eta:", eta)
 # print("f:", f)
 # print("v:", v)
-
-concentration = {
-    0: 5.7054,
-    1: 2.7397,
-    2: 1.8356,
-    3: 0.105,
-    4: 1.5525
-}
 
 # Modelo
 
@@ -197,35 +203,32 @@ m.optimize()
 #    m.computeIIS()
 #    m.write("modelo.ilp")  # debug
 
-if m.status == GRB.OPTIMAL:
-    print("\nResultados optimal:")
-    # Cuales procesos se activaron, no imprimir todos los tiempos
-    for p in P:
-        for t in T:
-            if X[p, t].X > 0.5:
-                print(f"Proceso {p} activado en t={t}")
-            if Y[p, t].X > 0.5:
-                print(f"Proceso {p} en operación en t={t}")
-    for t in T:
-        if Q[t].X > 0.5:
-            print(f"Rebalse de proceso en t={t}")
-        if S[t].X > 0.5:
-            print(f"Rebalse de piscina en t={t}")
-    # Total amount of each contaminant add for all t
-    total_Z = {}
-    for c in C:
-        total = sum(Z[key].X for key in Z.keys() if key[0] == int(c))
-        total_Z[c] = total
-        print(f"Total Z for contaminant {c}: {total}")
-    # Concentration of wahts leaving:
-    total_outflow = r * 365
-    print(f"Total outflow of contaminants: {total_outflow}")
-    for c in C:
-        concentration_out = total_Z[c] / total_outflow
-        print(f"Concentration of contaminant {c} in outflow: {concentration_out}")
-        
-else:
-    print("No se encontró solución óptima. Status:", m.status)
+# if m.status == GRB.OPTIMAL:
+#     print("\nResultados optimal:")
+#     for p in P:
+#         for t in T:
+#             if X[p, t].X > 0.5:
+#                 print(f"Proceso {p} activado en t={t}")
+#             if Y[p, t].X > 0.5:
+#                 print(f"Proceso {p} en operación en t={t}")
+#     for t in T:
+#         if Q[t].X > 0.5:
+#             print(f"Rebalse de proceso en t={t}")
+#         if S[t].X > 0.5:
+#             print(f"Rebalse de piscina en t={t}")
+#     total_Z = {}
+#     for c in C:
+#         total = sum(Z[key].X for key in Z.keys() if key[0] == int(c))
+#         total_Z[c] = total
+#         print(f"Total Z for contaminant {c}: {total}")
+#     # Concentration of wahts leaving:
+#     total_outflow = r * 365
+#     print(f"Total outflow of contaminants: {total_outflow}")
+#     for c in C:
+#         concentration_out = total_Z[c] / total_outflow
+#         print(f"Concentration of contaminant {c} in outflow: {concentration_out}")
+#else:
+#    print("No se encontró solución óptima. Status:", m.status)
 
 if m.status == GRB.OPTIMAL:
     activated = []
@@ -274,11 +277,11 @@ if m.status == GRB.OPTIMAL:
 
     # Write to Excel
     with pd.ExcelWriter("Resultados_Optimización.xlsx") as writer:
-        df_info_modelo.to_excel(writer, sheet_name="Información Modelo", index=False)
-        pd.DataFrame(activated).to_excel(writer, sheet_name="Procesos Activados", index=False)
-        pd.DataFrame(in_operation).to_excel(writer, sheet_name="Procesos en Operación", index=False)
-        pd.DataFrame(rebalse_proceso + rebalse_piscina).to_excel(writer, sheet_name="Rebalses", index=False)
-        pd.DataFrame(total_Z).to_excel(writer, sheet_name="Total Contaminantes Z", index=False)
-        pd.DataFrame(concentration_out).to_excel(writer, sheet_name="Concentraciones", index=False)
+        df_info_modelo.to_excel(writer, sheet_name="Información Modelo", index=False, float_format="%.6f")
+        pd.DataFrame(activated).to_excel(writer, sheet_name="Procesos Activados", index=False,float_format="%.6f")
+        pd.DataFrame(in_operation).to_excel(writer, sheet_name="Procesos en Operación", index=False,float_format="%.6f")
+        pd.DataFrame(rebalse_proceso + rebalse_piscina).to_excel(writer, sheet_name="Rebalses", index=False,float_format="%.6f")
+        pd.DataFrame(total_Z).to_excel(writer, sheet_name="Total Contaminantes Z", index=False,float_format="%.6f")
+        pd.DataFrame(concentration_out).to_excel(writer, sheet_name="Concentraciones", index=False,float_format="%.6f")
 
     print("Resultados exportados a 'Resultados_Optimización.xlsx'")
