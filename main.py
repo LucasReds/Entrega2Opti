@@ -1,6 +1,9 @@
 import pandas as pd
 from gurobipy import Model, GRB, quicksum
 
+# Correr el main teniendo la carpeta Datos en la misma carpeta que este script.
+# Asegurarse de tener instaladas las librerías necesarias.
+
 # 1. Costo instalación de procesos
 i_df = pd.read_excel("Datos/costo_instalacion_proceso.xlsx", header=None, names=["valor"])
 i_df["p"] = i_df.index
@@ -73,17 +76,6 @@ a = area_df.iloc[0, 0]
 # Constantes
 eps = 1e-4
 M = 1e10  
-
-#presupuesto *= 100
-
-# para cada proceso, bajar el costo de instalación y mantención
-i_df["valor"] *= 0.01
-i = dict(zip(i_df["p"], i_df["valor"]))
-print("Costo instalación de procesos:", i)
-d_df["valor"] *= 0.01
-d = dict(zip(d_df["p"], d_df["valor"]))
-print("Costo mantención de procesos:", d)
-print("presupuesto:", presupuesto)
 
 # Rangos
 P = sorted(i_df["p"].unique())
@@ -187,8 +179,7 @@ for t in T:
     m.addConstr(S[t] + Q[t] <= 1, name=f"R11_{t}")
 
 # R12: Presupuesto
-m.addConstr(quicksum(Y[p, t] * d[p] for p in P for t in T) +
-            quicksum(X[p, t] * i[p] for p in P for t in T) <= presupuesto, name="R12")
+m.addConstr(quicksum(Y[p, t] * d[p] for p in P for t in T) + i[p] <= presupuesto, name="R12")
 
 # R13: Activación inmediata
 for p in P:
@@ -198,6 +189,8 @@ for p in P:
 # Optimize
 
 m.optimize()
+
+# Debugging: uncomment to print model status
 
 #if m.status == GRB.INF_OR_UNBD or m.status == GRB.INFEASIBLE:
 #    m.computeIIS()
@@ -276,7 +269,7 @@ if m.status == GRB.OPTIMAL:
         })
 
     # Write to Excel
-    with pd.ExcelWriter("Resultados_Optimización.xlsx") as writer:
+    with pd.ExcelWriter("Resultados_Optimizacion.xlsx") as writer:
         df_info_modelo.to_excel(writer, sheet_name="Información Modelo", index=False, float_format="%.6f")
         pd.DataFrame(activated).to_excel(writer, sheet_name="Procesos Activados", index=False,float_format="%.6f")
         pd.DataFrame(in_operation).to_excel(writer, sheet_name="Procesos en Operación", index=False,float_format="%.6f")
@@ -284,4 +277,4 @@ if m.status == GRB.OPTIMAL:
         pd.DataFrame(total_Z).to_excel(writer, sheet_name="Total Contaminantes Z", index=False,float_format="%.6f")
         pd.DataFrame(concentration_out).to_excel(writer, sheet_name="Concentraciones", index=False,float_format="%.6f")
 
-    print("Resultados exportados a 'Resultados_Optimización.xlsx'")
+    print("Resultados exportados a 'Resultados_Optimizacion.xlsx'")
