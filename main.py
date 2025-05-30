@@ -77,6 +77,12 @@ for p in P:
     for t in T[:-f[p]+1]:
         m.addConstr(quicksum(Y[p, t2] for t2 in range(t, t + f[p])) >= f[p] * X[p, t], name=f"R4_{p}_{t}")
 
+for p in P:
+    for t in T:
+        if t + f[p] <= T[-1] + 1:
+            m.addConstr(quicksum(X[p, t2] for t2 in range(t, t + f[p])) <= 1, name=f"NoSolapamiento_{p}_{t}")
+
+
 # R5: Inventario proceso t=1
 for p in P:
     m.addConstr(H[p, T[0]] == N + alpha[T[0]] - Q[T[0]] * g - r[p] * Y[p, T[0]] + S[T[0]] * mu, name=f"R5_{p}")
@@ -119,10 +125,11 @@ for p in P:
 
 # Optimize
 
-#m.computeIIS()
-#m.write("modelo.ilp")  # Guardar el IIS para depuración
-
 m.optimize()
+
+# if m.status == GRB.INF_OR_UNBD or m.status == GRB.INFEASIBLE:
+#     m.computeIIS()
+#     m.write("modelo.ilp")  # Guardar el IIS para depuración
 
 if m.status == GRB.OPTIMAL:
     print("\nResultados optimal:")
@@ -132,10 +139,10 @@ if m.status == GRB.OPTIMAL:
                 print(f"Proceso {p} iniciado en t={t}")
             if Y[p, t].X > 0.5:
                 print(f"Proceso {p} activo en t={t}")
-    for t in T:
-        if Q[t].X > 0.5:
-            print(f"Rebalse de proceso en t={t}")
-        if S[t].X > 0.5:
-            print(f"Rebalse de piscina en t={t}")
+    # for t in T:
+    #     if Q[t].X > 0.5:
+    #         print(f"Rebalse de proceso en t={t}")
+    #     if S[t].X > 0.5:
+    #         print(f"Rebalse de piscina en t={t}")
 else:
     print("No se encontró solución óptima. Status:", m.status)
