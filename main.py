@@ -109,6 +109,7 @@ m = Model("Filtración")
 # Variables
 X = m.addVars(P, T, vtype=GRB.BINARY, name="X")
 Y = m.addVars(P, T, vtype=GRB.BINARY, name="Y")
+W = m.addVars(P, vtype=GRB.BINARY, name="W")
 H = m.addVars(P, T, vtype=GRB.CONTINUOUS, lb=0, name="H")
 Q = m.addVars(T, vtype=GRB.BINARY, name="Q")
 S = m.addVars(T, vtype=GRB.BINARY, name="S")
@@ -163,28 +164,32 @@ for p in P:
         m.addConstr(H[p, t] - v >= eps - M * (1 - Q[t]), name=f"R8b_{p}_{t}")
 
 # R9: Inventario piscina t=1
-m.addConstr(A[T[0]] == Q[T[0]] * g - S[T[0]] * mu, name="R8")
+m.addConstr(A[T[0]] == Q[T[0]] * g - S[T[0]] * mu, name="R9")
 
 # R10: Inventario piscina t > 1
 for t in T[1:]:
-    m.addConstr(A[t] == A[t-1] + Q[t] * g - S[t] * mu, name=f"R9_{t}")
+    m.addConstr(A[t] == A[t-1] + Q[t] * g - S[t] * mu, name=f"R10_{t}")
 
 # R11: Rebalse piscina
 for t in T:
-    m.addConstr(A[t] - volumen_emergencia <= M * S[t], name=f"R10a_{t}")
-    m.addConstr(A[t] - volumen_emergencia >= eps - M * (1 - S[t]), name=f"R10b_{t}")
+    m.addConstr(A[t] - volumen_emergencia <= M * S[t], name=f"R11a_{t}")
+    m.addConstr(A[t] - volumen_emergencia >= eps - M * (1 - S[t]), name=f"R11b_{t}")
 
 # R12: No rebalse simultáneo
 for t in T:
-    m.addConstr(S[t] + Q[t] <= 1, name=f"R11_{t}")
+    m.addConstr(S[t] + Q[t] <= 1, name=f"R12_{t}")
 
-# R13: Presupuesto
-m.addConstr(quicksum(Y[p, t] * d[p] for p in P for t in T) + i[p] <= presupuesto, name="R12")
+# R13: Activación de procesos
+for p in P:
+    m.addConstr(quicksum(Y[p, t] for t in T) >= W[p], name=f"R13_{p}")
 
-# R14: Activación inmediata
+# R14: Presupuesto
+m.addConstr(quicksum(W[p] * i[p] for p in P) + quicksum(Y[p, t] * d[p] for p in P for t in T) <= presupuesto, name="R14")
+
+# R15: Activación inmediata
 for p in P:
     for t in T:
-        m.addConstr(X[p, t] <= Y[p, t], name=f"R13_{p}_{t}")
+        m.addConstr(X[p, t] <= Y[p, t], name=f"R15_{p}_{t}")
 
 # Optimize
 
