@@ -165,23 +165,23 @@ for p in P:
 # R9: Inventario piscina t=1
 m.addConstr(A[T[0]] == Q[T[0]] * g - S[T[0]] * mu, name="R8")
 
-# R9: Inventario piscina t > 1
+# R10: Inventario piscina t > 1
 for t in T[1:]:
     m.addConstr(A[t] == A[t-1] + Q[t] * g - S[t] * mu, name=f"R9_{t}")
 
-# R10: Rebalse piscina
+# R11: Rebalse piscina
 for t in T:
     m.addConstr(A[t] - volumen_emergencia <= M * S[t], name=f"R10a_{t}")
     m.addConstr(A[t] - volumen_emergencia >= eps - M * (1 - S[t]), name=f"R10b_{t}")
 
-# R11: No rebalse simultáneo
+# R12: No rebalse simultáneo
 for t in T:
     m.addConstr(S[t] + Q[t] <= 1, name=f"R11_{t}")
 
-# R12: Presupuesto
+# R13: Presupuesto
 m.addConstr(quicksum(Y[p, t] * d[p] for p in P for t in T) + i[p] <= presupuesto, name="R12")
 
-# R13: Activación inmediata
+# R14: Activación inmediata
 for p in P:
     for t in T:
         m.addConstr(X[p, t] <= Y[p, t], name=f"R13_{p}_{t}")
