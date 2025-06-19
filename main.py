@@ -201,32 +201,32 @@ m.optimize()
 #    m.computeIIS()
 #    m.write("modelo.ilp")  # debug
 
-# if m.status == GRB.OPTIMAL:
-#     print("\nResultados optimal:")
-#     for p in P:
-#         for t in T:
-#             if X[p, t].X > 0.5:
-#                 print(f"Proceso {p} activado en t={t}")
-#             if Y[p, t].X > 0.5:
-#                 print(f"Proceso {p} en operación en t={t}")
-#     for t in T:
-#         if Q[t].X > 0.5:
-#             print(f"Rebalse de proceso en t={t}")
-#         if S[t].X > 0.5:
-#             print(f"Rebalse de piscina en t={t}")
-#     total_Z = {}
-#     for c in C:
-#         total = sum(Z[key].X for key in Z.keys() if key[0] == int(c))
-#         total_Z[c] = total
-#         print(f"Total Z for contaminant {c}: {total}")
-#     # Concentration of wahts leaving:
-#     total_outflow = r * 365
-#     print(f"Total outflow of contaminants: {total_outflow}")
-#     for c in C:
-#         concentration_out = total_Z[c] / total_outflow
-#         print(f"Concentration of contaminant {c} in outflow: {concentration_out}")
-#else:
-#    print("No se encontró solución óptima. Status:", m.status)
+if m.status == GRB.OPTIMAL:
+     print("\nResultados optimal:")
+     for p in P:
+         for t in T:
+             if X[p, t].X > 0.5:
+                 print(f"Proceso {p} activado en t={t}")
+             if Y[p, t].X > 0.5:
+                 print(f"Proceso {p} en operación en t={t}")
+     for t in T:
+         if Q[t].X > 0.5:
+             print(f"Rebalse de proceso en t={t}")
+         if S[t].X > 0.5:
+             print(f"Rebalse de piscina en t={t}")
+     total_Z = {}
+     for c in C:
+         total = sum(Z[key].X for key in Z.keys() if key[0] == int(c))
+         total_Z[c] = total
+         print(f"Total Z for contaminant {c}: {total}")
+     # Concentration of wahts leaving:
+     total_outflow = r * 365
+     print(f"Total outflow of contaminants: {total_outflow}")
+     for c in C:
+         concentration_out = total_Z[c] / total_outflow
+         print(f"Concentration of contaminant {c} in outflow: {concentration_out}")
+else:
+    print("No se encontró solución óptima. Status:", m.status)
 
 if m.status == GRB.OPTIMAL:
     activated = []
