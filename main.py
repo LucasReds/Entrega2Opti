@@ -181,7 +181,11 @@ for t in T:
 
 # R13: Activación de procesos
 for p in P:
-    m.addConstr(quicksum(Y[p, t] for t in T) >= W[p], name=f"R13_{p}")
+    m.addConstr(quicksum(Y[p, t] for t in T) >= W[p], name=f"R13a_{p}")
+
+for p in P:
+    for t in T:
+        m.addConstr(Y[p, t] <= W[p], name=f"R13b_{p}_{t}")
 
 # R14: Presupuesto
 m.addConstr(quicksum(W[p] * i[p] for p in P) + quicksum(Y[p, t] * d[p] for p in P for t in T) <= presupuesto, name="R14")
@@ -218,13 +222,13 @@ if m.status == GRB.OPTIMAL:
      for c in C:
          total = sum(Z[key].X for key in Z.keys() if key[0] == int(c))
          total_Z[c] = total
-         print(f"Total Z for contaminant {c}: {total}")
+         print(f"Total Z de contaminante {c}: {total}")
      # Concentration of wahts leaving:
      total_outflow = r * 365
-     print(f"Total outflow of contaminants: {total_outflow}")
+     print(f"Total salida de contaminantes: {total_outflow}")
      for c in C:
          concentration_out = total_Z[c] / total_outflow
-         print(f"Concentration of contaminant {c} in outflow: {concentration_out}")
+         print(f"Concentración de contaminant {c} en outflow: {concentration_out}")
 else:
     print("No se encontró solución óptima. Status:", m.status)
 
@@ -233,6 +237,7 @@ if m.status == GRB.OPTIMAL:
     in_operation = []
     rebalse_proceso = []
     rebalse_piscina = []
+    costo_total = 0
 
     info_modelo = {
         "Valor objetivo": [m.ObjVal],
@@ -243,6 +248,8 @@ if m.status == GRB.OPTIMAL:
         "Cantidad de variables binarias": [sum(1 for v in m.getVars() if v.VType == GRB.BINARY)],
         "Cantidad de variables continuas": [sum(1 for v in m.getVars() if v.VType == GRB.CONTINUOUS)],
     }
+
+
     df_info_modelo = pd.DataFrame(info_modelo)
 
     for p in P:
@@ -273,6 +280,17 @@ if m.status == GRB.OPTIMAL:
             "Concentración en salida": z["Total_Z"] / total_outflow
         })
 
+    for p in P:
+        if W[p].X > 0.5:
+            print(f"Proceso {p} fue instalado.")
+
+
+    # Costo total gastado
+    costo_total = sum(W[p].X * i[p] for p in P) + sum(Y[p, t].X * d[p] for p in P for t in T)
+    print(f"Costo total: {costo_total}")
+    print("Costo de instalacion del procesos:", sum(W[p].X * i[p] for p in P))
+    print("Costo de mantención de procesos:", sum(Y[p, t].X * d[p] for p in P for t in T))
+
     # Write to Excel
     with pd.ExcelWriter("Resultados_Optimizacion.xlsx") as writer:
         df_info_modelo.to_excel(writer, sheet_name="Información Modelo", index=False, float_format="%.6f")
@@ -281,5 +299,6 @@ if m.status == GRB.OPTIMAL:
         pd.DataFrame(rebalse_proceso + rebalse_piscina).to_excel(writer, sheet_name="Rebalses", index=False,float_format="%.6f")
         pd.DataFrame(total_Z).to_excel(writer, sheet_name="Total Contaminantes Z", index=False,float_format="%.6f")
         pd.DataFrame(concentration_out).to_excel(writer, sheet_name="Concentraciones", index=False,float_format="%.6f")
+        pd.DataFrame({"Costo Total": [costo_total]}).to_excel(writer, sheet_name="Costo Total", index=False, float_format="%.6f")
 
     print("Resultados exportados a 'Resultados_Optimizacion.xlsx'")

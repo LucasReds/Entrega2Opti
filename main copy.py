@@ -353,32 +353,36 @@ def correr_escenario(nombre_escenario, presupuesto_input=None, lluvia_factor=1.0
     for p in P:
         m.addConstr(quicksum(Y[p, t] for t in T) >= W[p])
 
+    for p in P:
+        for t in T:
+            m.addConstr(Y[p, t] <= W[p])
+
     m.addConstr(quicksum(W[p] * i[p] for p in P) + quicksum(Y[p, t] * d_mod[p] for p in P for t in T) <= presupuesto_mod)
 
     for p in P:
         for t in T:
             m.addConstr(X[p, t] <= Y[p, t])
 
-    m.reset()  # limpia estado previo
+    #m.reset()  # limpia estado previo
 
-    penalty = 1.0
-    m.feasRelax(
-        relaxobjtype=0,
-        minrelax=True,
-        vars=None,
-        lbpen=None,
-        ubpen=None,
-        constrs=m.getConstrs(),
-        rhspen=[penalty]*len(m.getConstrs())
-    )
+    #penalty = 1.0
+    #m.feasRelax(
+    #    relaxobjtype=0,
+    #    minrelax=True,
+    #    vars=None,
+    #    lbpen=None,
+    #    ubpen=None,
+    #    constrs=m.getConstrs(),
+    #    rhspen=[penalty]*len(m.getConstrs())
+    #)
     m.optimize()
-
-    m.write("relaxed_after_feasrelax.lp")
-
-    for var in m.getVars():
-        if var.VarName.startswith("__feasrelax_RHS_") or var.VarName.startswith("__feasrelax_LB_") or var.VarName.startswith("__feasrelax_UB_"):
-            if var.X > 1e-6:
-                print(f"Relaxación variable {var.VarName} con valor {var.X}")
+#
+    #m.write("relaxed_after_feasrelax.lp")
+#
+    #for var in m.getVars():
+    #    if var.VarName.startswith("__feasrelax_RHS_") or var.VarName.startswith("__feasrelax_LB_") or var.VarName.startswith("__feasrelax_UB_"):
+    #        if var.X > 1e-6:
+    #            print(f"Relaxación variable {var.VarName} con valor {var.X}")
 
 
 
@@ -433,14 +437,14 @@ def correr_escenario(nombre_escenario, presupuesto_input=None, lluvia_factor=1.0
 # ---------- ESCENARIOS A EVALUAR ----------
 escenarios = [
     #{"nombre": "base", "presupuesto": presupuesto, "lluvia": 1.0, "eficiencia": 1.0},
-    {"nombre": "lluvia_baja", "presupuesto": presupuesto, "lluvia": 0.8, "eficiencia": 1.0},
-    {"nombre": "lluvia_alta", "presupuesto": presupuesto, "lluvia": 1.06, "eficiencia": 1.0},
-    {"nombre": "presupuesto_bajo", "presupuesto": presupuesto * 0.099, "lluvia": 1.0, "eficiencia": 1.0},
-    {"nombre": "presupuesto_alto", "presupuesto": presupuesto * 1.15, "lluvia": 1.0, "eficiencia": 1.0},
-    {"nombre": "eficiencia_baja", "presupuesto": presupuesto, "lluvia": 1.0, "eficiencia": 0.9},
-    {"nombre": "eficiencia_alta", "presupuesto": presupuesto, "lluvia": 1.0, "eficiencia": 1.1},
+    #{"nombre": "lluvia_baja", "presupuesto": presupuesto, "lluvia": 0.8, "eficiencia": 1.0},
+    #{"nombre": "lluvia_alta", "presupuesto": presupuesto, "lluvia": 1.06, "eficiencia": 1.0},
+    #{"nombre": "presupuesto_bajo", "presupuesto": presupuesto * 0.66, "lluvia": 1.0, "eficiencia": 1.0},
+    #{"nombre": "presupuesto_alto", "presupuesto": presupuesto * 10, "lluvia": 1.0, "eficiencia": 1.0},
+    #{"nombre": "eficiencia_baja", "presupuesto": presupuesto, "lluvia": 1.0, "eficiencia": 0.9},
+    #{"nombre": "eficiencia_alta", "presupuesto": presupuesto, "lluvia": 1.0, "eficiencia": 1.1},
     {"nombre": "mantencion_baja", "presupuesto": presupuesto, "lluvia": 1.0, "eficiencia": 1.0, "mantencion": 0.75},
-    {"nombre": "mantencion_alta", "presupuesto": presupuesto, "lluvia": 1.0, "eficiencia": 1.0, "mantencion": 10},
+    {"nombre": "mantencion_alta", "presupuesto": presupuesto, "lluvia": 1.0, "eficiencia": 1.0, "mantencion": 4.1},
 ]
 
 #escenarios = [
@@ -458,10 +462,10 @@ escenarios = [
 
 # escenarios con lluvia:
 
-escenarios = [
-    #{"nombre": "lluvia_baja", "presupuesto": presupuesto, "lluvia": 0, "eficiencia": 1.0},
-    {"nombre": "lluvia_alta", "presupuesto": presupuesto, "lluvia": 1.07, "eficiencia": 1.0},
-]
+#escenarios = [
+#    {"nombre": "lluvia_baja", "presupuesto": presupuesto, "lluvia": 0.1, "eficiencia": 1.0},
+#    {"nombre": "lluvia_alta", "presupuesto": presupuesto, "lluvia": 1.06, "eficiencia": 1.0},
+#]
 
 for esc in escenarios:
     correr_escenario(
